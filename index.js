@@ -120,14 +120,9 @@ RandomGenerator.prototype.hexString = function (digits) {
   if (nodeCrypto && ! self.alea) {
     var numBytes = Math.ceil(digits / 2);
     var bytes;
-    // Try to get cryptographically strong randomness. Fall back to
-    // non-cryptographically strong if not available.
-    try {
-      bytes = nodeCrypto.randomBytes(numBytes);
-    } catch (e) {
-      // XXX should re-throw any error except insufficient entropy
-      bytes = nodeCrypto.pseudoRandomBytes(numBytes);
-    }
+    
+	bytes = nodeCrypto.randomBytes(numBytes);
+    
     var result = bytes.toString("hex");
     // If the number of digits is odd, we'll have generated an extra 4 bits
     // of randomness, so we need to trim the last digit.
