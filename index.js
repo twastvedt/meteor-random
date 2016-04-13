@@ -9,6 +9,11 @@
 
 var nodeCrypto = require('crypto');
 
+var support = {
+	node: nodeCrypto && nodeCrypto.hasOwnProperty('randomBytes'),
+	browser: typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues
+};
+
 // see http://baagoe.org/en/wiki/Better_random_numbers_for_javascript
 // for a full discussion and Alea implementation.
 var Alea = function () {
@@ -102,14 +107,16 @@ RandomGenerator.prototype.fraction = function () {
   var self = this;
   if (self.alea) {
     return self.alea();
-  } else if (nodeCrypto) {
+	
+  } else if (support.node) {
     var numerator = parseInt(self.hexString(8), 16);
     return numerator * 2.3283064365386963e-10; // 2^-32
-  } else if (typeof window !== "undefined" && window.crypto &&
-             window.crypto.getRandomValues) {
+	
+  } else if (support.browser) {
     var array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
     return array[0] * 2.3283064365386963e-10; // 2^-32
+	
   } else {
     throw new Error('No random generator available');
   }
@@ -117,7 +124,7 @@ RandomGenerator.prototype.fraction = function () {
 
 RandomGenerator.prototype.hexString = function (digits) {
   var self = this;
-  if (nodeCrypto && ! self.alea) {
+  if (support.node && ! self.alea) {
     var numBytes = Math.ceil(digits / 2);
     var bytes;
     
@@ -127,6 +134,7 @@ RandomGenerator.prototype.hexString = function (digits) {
     // If the number of digits is odd, we'll have generated an extra 4 bits
     // of randomness, so we need to trim the last digit.
     return result.substring(0, digits);
+	
   } else {
     var hexDigits = [];
     for (var i = 0; i < digits; ++i) {
@@ -197,9 +205,7 @@ var width = (typeof window !== 'undefined' && window.innerWidth) ||
 
 var agent = (typeof navigator !== 'undefined' && navigator.userAgent) || "";
 
-if (nodeCrypto ||
-    (typeof window !== "undefined" &&
-     window.crypto && window.crypto.getRandomValues))
+if (support.node || support.browser)
   module.exports = Random =  new RandomGenerator();
 else
   module.exports = Random = new RandomGenerator([new Date(), height, width, agent, Math.random()]);
